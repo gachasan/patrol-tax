@@ -72,4 +72,62 @@
 
 <div class="container">
   <h2>🧾 โปรแกรมคำนวณค่าปรับและภาษี</h2>
-  <div class=
+  <div class="subtext">สำนักงานสรรพสามิตพื้นที่สงขลา สาขาสะเดา</div>
+  
+  <label>ข้อหา:</label>
+  <select id="charge">
+    <option value="ขาย">ข้อหาขาย</option>
+    <option value="ครอบครอง">ข้อหาครอบครอง</option>
+  </select>
+
+  <label>ชนิดเชื้อเพลิง:</label>
+  <select id="fuel">
+    <option value="เบนซิน">เบนซิน</option>
+    <option value="ดีเซล">ดีเซล</option>
+  </select>
+
+  <label>จำนวนลิตร:</label>
+  <input type="number" id="liters" placeholder="กรอกจำนวนลิตร" min="0" step="any">
+
+  <button onclick="calculate()">คำนวณ</button>
+
+  <div class="result" id="output"></div>
+</div>
+
+<script>
+function calculate() {
+  const charge = document.getElementById('charge').value;
+  const fuel = document.getElementById('fuel').value;
+  const liters = parseFloat(document.getElementById('liters').value);
+  const output = document.getElementById('output');
+  
+  if (isNaN(liters) || liters <= 0) {
+    output.innerHTML = "<span style='color:red'>กรุณากรอกจำนวนลิตรให้ถูกต้อง</span>";
+    return;
+  }
+
+  // อัตราภาษีตามชนิดเชื้อเพลิง
+  const rate = fuel === "เบนซิน" ? 7.5 : 7.44;
+  // ตัวคูณค่าปรับตามข้อหา
+  const fineMultiplier = charge === "ขาย" ? 7 : 5;
+
+  // คำนวณโดยตัดเศษทศนิยมออก (ไม่ปัดขึ้น)
+  const fine = Math.floor(liters * fineMultiplier * rate);
+  const tax = Math.floor(liters * rate);
+  const adminTax = Math.floor(liters * rate * 0.1);
+  const total = fine + tax + adminTax;
+
+  output.innerHTML = `
+    <span>ข้อหา:</span> ${charge}<br>
+    <span>เชื้อเพลิง:</span> ${fuel}<br>
+    <span>จำนวนลิตร:</span> ${liters.toLocaleString()} ลิตร<br><hr>
+    <span>ค่าปรับ:</span> ${fine.toLocaleString()} บาท<br>
+    <span>ค่าภาษี:</span> ${tax.toLocaleString()} บาท<br>
+    <span>ค่าภาษีจ่ายปกครอง:</span> ${adminTax.toLocaleString()} บาท<br><hr>
+    <span>รวมที่ต้องชำระทั้งสิ้น:</span> ${total.toLocaleString()} บาท
+  `;
+}
+</script>
+
+</body>
+</html>
