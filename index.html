@@ -14,37 +14,55 @@
   body {
     font-family: "Segoe UI", "Prompt", sans-serif;
     background-color: #f5f7fa;
-    min-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
+    min-height: 100vh;
     flex-direction: column;
     position: relative;
-    overflow: hidden;
+    overflow-x: hidden;
   }
 
-  /* 🟦 พื้นหลังแพทเทิร์นโลโก้กรมสรรพสามิต 2 แบบสลับกัน */
+  /* ✅ พื้นหลังโลโก้กรมสรรพสามิตแบบเยื้องสวย */
   body::before {
     content: "";
     position: fixed;
     inset: 0;
     background-image:
-      url("https://upload.wikimedia.org/wikipedia/commons/6/6c/Emblem_of_the_Excise_Department.svg"),
       url("https://upload.wikimedia.org/wikipedia/commons/3/37/Logo_of_the_Excise_Department.svg");
     background-repeat: repeat;
-    background-position: 0 0, 45px 45px;
-    background-size: 90px, 120px;
-    opacity: 0.08;
-    filter: grayscale(100%);
+    background-size: 180px;
+    background-position: 0 0;
+    opacity: 0.12;
     z-index: 0;
   }
 
-  /* โลโก้หลักบนสุด */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background-image:
+      url("https://upload.wikimedia.org/wikipedia/commons/3/37/Logo_of_the_Excise_Department.svg");
+    background-repeat: repeat;
+    background-size: 180px;
+    background-position: 90px 90px; /* เยื้องให้สวยงาม */
+    opacity: 0.12;
+    z-index: 0;
+  }
+
+  /* ✅ ชั้นกรองพื้นหลังให้ดูพรีเมียม */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(255,255,255,0.88);
+    backdrop-filter: blur(2px);
+    z-index: 1;
+  }
+
   .main-logo {
     position: relative;
-    z-index: 2;
+    z-index: 3;
     width: 120px;
-    height: auto;
     margin-bottom: 20px;
     animation: fadeInDown 0.8s ease;
   }
@@ -54,12 +72,11 @@
     to { opacity: 1; transform: translateY(0); }
   }
 
-  /* กล่องหลัก */
   .card {
     position: relative;
-    z-index: 2;
+    z-index: 3;
     background: rgba(255, 255, 255, 0.96);
-    width: 430px;
+    width: 440px;
     padding: 40px 45px;
     border-radius: 20px;
     box-shadow: 0 10px 35px rgba(0, 0, 0, 0.12);
@@ -79,11 +96,11 @@
   }
 
   .title {
-    font-size: 1.5rem;
+    font-size: 1.6rem;
     font-weight: 600;
     color: #1e293b;
     text-align: center;
-    margin-bottom: 4px;
+    margin-bottom: 5px;
   }
 
   .subtitle {
@@ -110,6 +127,7 @@
     font-size: 15px;
     transition: all 0.25s ease;
     background: #f9fafb;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
   }
 
   select:focus, input:focus {
@@ -138,6 +156,15 @@
     box-shadow: 0 4px 15px rgba(37, 99, 235, 0.2);
   }
 
+  .reset-btn {
+    background: #e11d48;
+    margin-top: 10px;
+  }
+
+  .reset-btn:hover {
+    background: #be123c;
+  }
+
   .result {
     background: #f8fafc;
     border: 1px solid #e2e8f0;
@@ -147,6 +174,13 @@
     text-align: left;
     color: #1e293b;
     line-height: 1.8em;
+    opacity: 0;
+    animation: fadeInResult 0.6s ease forwards;
+  }
+
+  @keyframes fadeInResult {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   .result span {
@@ -171,11 +205,14 @@
 </head>
 <body>
 
-  <!-- โลโก้หลักอยู่ตรงกลางบนสุด -->
+  <!-- ✅ ชั้นกรองพื้นหลัง -->
+  <div class="overlay"></div>
+
+  <!-- โลโก้หลักด้านบน -->
   <img class="main-logo" src="https://upload.wikimedia.org/wikipedia/commons/3/37/Logo_of_the_Excise_Department.svg" alt="โลโก้กรมสรรพสามิต">
 
   <div class="card">
-    <div class="title">🧾 โปรแกรมคำนวณค่าปรับ</div>
+    <div class="title">🧾 โปรแกรมคำนวณค่าปรับและภาษี</div>
     <div class="subtitle">สำนักงานสรรพสามิตพื้นที่สงขลา สาขาสะเดา</div>
 
     <label>ข้อหา:</label>
@@ -194,6 +231,7 @@
     <input type="number" id="liters" placeholder="กรอกจำนวนลิตร" min="0" step="any">
 
     <button onclick="calculate()">คำนวณ</button>
+    <button class="reset-btn" onclick="resetForm()">ล้างข้อมูล</button>
 
     <div class="result" id="output"></div>
 
@@ -209,20 +247,24 @@ function calculate() {
 
   if (isNaN(liters) || liters <= 0) {
     output.innerHTML = "<span style='color:red'>⚠️ กรุณากรอกจำนวนลิตรให้ถูกต้อง</span>";
+    output.style.opacity = "1";
     return;
   }
 
   const rate = fuel === "เบนซิน" ? 7.5 : 7.44;
   const fineMultiplier = charge === "ขาย" ? 7 : 5;
 
-  // ✅ คำนวณตามกฎ
+  // ✅ ค่าปรับ (2 ตำแหน่ง ตัดทิ้ง ไม่ปัด)
   const fineRaw = liters * fineMultiplier * rate;
-  const fine = Math.floor(fineRaw * 100) / 100; // 2 ตำแหน่งไม่ปัดขึ้น
+  const fine = Math.floor(fineRaw * 100) / 100;
 
-  const tax = Math.floor(liters * rate); // ภาษี (ตัดทศนิยมทั้งหมด)
+  // ✅ ค่าภาษี (ตัดทศนิยมทั้งหมด)
+  const tax = Math.floor(liters * rate);
 
-  const adminTaxRaw = liters * rate * 0.1;
-  const adminTax = Math.floor(adminTaxRaw * 100) / 100; // 2 ตำแหน่งไม่ปัดขึ้น
+  // ✅ ค่าภาษีมหาดไทย (2 ตำแหน่ง ปัดขึ้นเมื่อทศนิยมที่ 3 >= 5)
+  const raw = liters * rate * 0.1;
+  const rounded = Math.floor(raw * 1000 + 0.5) / 1000; // ปัดที่ตำแหน่งที่ 3
+  const adminTax = Math.round(rounded * 100) / 100;
 
   const total = fine + tax + adminTax;
 
@@ -230,11 +272,20 @@ function calculate() {
     <span>ข้อหา:</span> ${charge}<br>
     <span>เชื้อเพลิง:</span> ${fuel}<br>
     <span>จำนวนลิตร:</span> ${liters.toLocaleString()} ลิตร<br><hr>
-    <span>ค่าปรับ:</span> ${fine.toFixed(2).toLocaleString()} บาท<br>
+    <span>ค่าปรับ:</span> ${fine.toFixed(2)} บาท<br>
     <span>ค่าภาษี:</span> ${tax.toLocaleString()} บาท<br>
-    <span>ค่าภาษีจ่ายปกครอง:</span> ${adminTax.toFixed(2).toLocaleString()} บาท<br><hr>
-    <span>รวมที่ต้องชำระทั้งสิ้น:</span> ${total.toFixed(2).toLocaleString()} บาท
+    <span>ค่าภาษีมหาดไทย:</span> ${adminTax.toFixed(2)} บาท<br><hr>
+    <span>รวมที่ต้องชำระทั้งสิ้น:</span> ${total.toFixed(2)} บาท
   `;
+
+  output.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  output.style.opacity = "1";
+}
+
+function resetForm() {
+  document.getElementById('liters').value = '';
+  document.getElementById('output').innerHTML = '';
+  document.getElementById('output').style.opacity = '0';
 }
 </script>
 
